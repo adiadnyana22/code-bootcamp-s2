@@ -36,6 +36,7 @@ struct userList {
     friendList *head, *tail;
     friendInbox *head, *tail;
     friendReq *head, *tail;
+    recycleBin *head, *tail;
     userList *next, *prev;
 } *headUser, *tailUser;
 
