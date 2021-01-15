@@ -5,9 +5,12 @@
 
 userList *createUser(const char *username, const char *password){
     userList *newNode = (userList *) malloc(sizeof(userList));
-    newNode = NULL;
     strcpy(newNode->username, username);
     strcpy(newNode->password, password);
+    newNode->headFriendInbox = newNode->tailFriendInbox = NULL;
+    newNode->headFriendReq = newNode->tailFriendReq = NULL;
+    newNode->headFriendList = newNode->tailFriendList = NULL;
+    newNode->headRecycleBin = newNode->tailRecycleBin = NULL;
     newNode->next = newNode->prev = NULL;
 
     return newNode;
@@ -24,7 +27,7 @@ void pushUser(const char *username, const char *password){ // pushTail (Queue)
     }
 }
 
-friendReq *createFiendReq(userList *user, const char *username){
+friendReq *createFriendReq(const char *username){
     friendReq *newNode = (friendReq *) malloc(sizeof(friendReq));
     strcpy(newNode->username, username);
     newNode->next = newNode->prev = NULL;
@@ -33,8 +36,8 @@ friendReq *createFiendReq(userList *user, const char *username){
 }
 
 void pushFriendReq(userList *user, const char *username){ // pushTail (Queue)
-    friendReq *temp = createFiendReq(user, username);
-    if(!user->headFriendReq){
+    friendReq *temp = createFriendReq(username);
+    if(user->headFriendReq == NULL){
         user->headFriendReq = user->tailFriendReq = temp;
     } else {
         temp->prev = user->tailFriendReq;
@@ -76,13 +79,13 @@ void popTailFriendReq(userList *user){
 void popFriendReq(userList *user, const char *username){
     if (!user->headFriendReq){
         return;
-    } else if(username == user->headFriendReq->username){
+    } else if(strcmp(user->headFriendReq->username, username) == 0){
         popHeadFriendReq(user);
-    } else if(username == user->tailFriendReq->username){
+    } else if(strcmp(user->tailFriendReq->username, username) == 0){
         popTailFriendReq(user);
     } else {
         friendReq *curr = user->headFriendReq;
-        while(curr && curr->username != username){
+        while(curr && strcmp(curr->username, username) != 0){
             curr = curr->next;
         }
         curr->prev->next = curr->next;
@@ -94,7 +97,7 @@ void popFriendReq(userList *user, const char *username){
     }
 }
 
-friendInbox *createFiendInbox(userList *user, const char *username){
+friendInbox *createFriendInbox(const char *username){
     friendInbox *newNode = (friendInbox *) malloc(sizeof(friendInbox));
     strcpy(newNode->username, username);
     newNode->next = newNode->prev = NULL;
@@ -103,7 +106,7 @@ friendInbox *createFiendInbox(userList *user, const char *username){
 }
 
 void pushFriendInbox(userList *user, const char *username){ // pushTail (Queue)
-    friendInbox *temp = createFiendInbox(user, username);
+    friendInbox *temp = createFriendInbox(username);
     if(!user->headFriendInbox){
         user->headFriendInbox = user->tailFriendInbox = temp;
     } else {
@@ -146,13 +149,13 @@ void popTailFriendInbox(userList *user){
 void popFriendInbox(userList *user, const char *username){
     if (!user->headFriendInbox){
         return;
-    } else if(username == user->headFriendInbox->username){
+    } else if(strcmp(user->headFriendInbox->username, username) == 0){
         popHeadFriendInbox(user);
-    } else if(username == user->tailFriendInbox->username){
+    } else if(strcmp(user->tailFriendInbox->username, username) == 0){
         popTailFriendInbox(user);
     } else {
         friendInbox *curr = user->headFriendInbox;
-        while(curr && curr->username != username){
+        while(curr && strcmp(curr->username, username) != 0){
             curr = curr->next;
         }
         curr->prev->next = curr->next;
@@ -164,7 +167,7 @@ void popFriendInbox(userList *user, const char *username){
     }
 }
 
-friendList *createFiendList(userList *user, const char *username){
+friendList *createFriendList(const char *username){
     friendList *newNode = (friendList *) malloc(sizeof(friendList));
     strcpy(newNode->username, username);
     newNode->next = newNode->prev = NULL;
@@ -173,7 +176,7 @@ friendList *createFiendList(userList *user, const char *username){
 }
 
 void pushFriendList(userList *user, const char *username){ // pushTail (Queue)
-    friendList *temp = createFiendList(user, username);
+    friendList *temp = createFriendList(username);
     if(!user->headFriendList){
         user->headFriendList = user->tailFriendList = temp;
     } else {
@@ -216,13 +219,13 @@ void popTailFriendList(userList *user){
 void popFriendList(userList *user, const char *username){
     if (!user->headFriendList){
         return;
-    } else if(username == user->headFriendList->username){
+    } else if(strcmp(user->headFriendList->username, username) == 0){
         popHeadFriendList(user);
-    } else if(username == user->tailFriendList->username){
+    } else if(strcmp(user->tailFriendList->username, username) == 0){
         popTailFriendList(user);
     } else {
         friendList *curr = user->headFriendList;
-        while(curr && curr->username != username){
+        while(curr && strcmp(curr->username, username) != 0){
             curr = curr->next;
         }
         curr->prev->next = curr->next;
@@ -236,16 +239,17 @@ void popFriendList(userList *user, const char *username){
 
 void addFriend(userList *user, const char *username){
     userList *curr = headUser;
-    while(curr && curr->username != username){
+    while(curr && strcmp(curr->username, username) != 0){
         curr = curr->next;
     }
+    // printf("%s\n", curr->username);
     pushFriendInbox(user, username);
     pushFriendReq(curr, user->username);
 }
 
 void acceptFriend(userList *user, const char *username){
     userList *curr = headUser;
-    while(curr && curr->username != username){
+    while(curr && strcmp(curr->username, username) != 0){
         curr = curr->next;
     }
     pushFriendList(user, username);
@@ -254,6 +258,31 @@ void acceptFriend(userList *user, const char *username){
     popFriendReq(curr, user->username);
 }
 
+void removeFriend(userList *user, const char *username){
+    userList *curr = headUser;
+    while(curr && strcmp(curr->username, username) != 0){
+        curr = curr->next;
+    }
+    // printf("%s\n", curr->username);
+    popFriendList(user, username);
+    popFriendList(curr, user->username);
+}
+
 int main(){
+    pushUser("adi", "adiadi");
+    pushUser("han", "hanhan");
+    pushUser("andru", "andruadnru");
+    userList *curr = headUser;
+    addFriend(curr, "han");
+    userList *testSearch = headUser;
+    while (testSearch && strcmp(testSearch->username, "han") != 0){
+        testSearch = testSearch->next;
+    }
+    acceptFriend(testSearch, "adi");
+    printf("%s\n", testSearch->headFriendList->username);
+    printf("%s\n", curr->headFriendList->username);
+    removeFriend(testSearch, "adi");
+    printf("%s\n", testSearch->headFriendList->username);
+    
     return 0;
 }
