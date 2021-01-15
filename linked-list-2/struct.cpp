@@ -89,12 +89,12 @@ void pushMid(int value){
     }
 }
 
-void pushMid(int value){
+void popMid(int value){
     if (!head){
         return;
-    } else if(value < head->value){
+    } else if(value == head->value){
         popHead();
-    } else if(value > tail->value){
+    } else if(value == tail->value){
         popTail();
     } else {
         Node *curr = head;

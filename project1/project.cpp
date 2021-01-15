@@ -1,51 +1,178 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include "model.h"
 
-struct friendList {
-    char username[25];
-    friendList *next, *prev;
-};
+userList *createUser(const char *username, const char *password){
+    userList *newNode = (userList *) malloc(sizeof(userList));
+    newNode = NULL;
+    strcpy(newNode->username, username);
+    strcpy(newNode->password, password);
+    newNode->next = newNode->prev = NULL;
 
-struct friendInbox {
-    char username[25];
-    friendInbox *next, *prev;
-};
+    return newNode;
+}
 
-struct friendReq {
-    char username[25];
-    friendReq *next, *prev;
-};
+void pushUser(const char *username, const char *password){ // pushTail (Queue)
+    userList *temp = createUser(username, password);
+    if(!headUser){
+        headUser = tailUser = temp;
+    } else {
+        temp->prev = tailUser;
+        tailUser->next = temp;
+        tailUser = temp;
+    }
+}
 
-struct commentNotes {
-    char username[25];
-    char comment[255];
-    commentNotes *next, *prev;
-};
+friendReq *createFiendReq(userList *user, const char *username){
+    friendReq *newNode = (friendReq *) malloc(sizeof(friendReq));
+    strcpy(newNode->username, username);
+    newNode->next = newNode->prev = NULL;
 
-struct recycleBin {
-    char content[255];
-    int category;
-    int like;
-    int privateOrPublic;
-    recycleBin *next, *prev;
-};
+    return newNode;
+}
 
-struct userList {
-    char username[25];
-    char password[25];
-    friendList *head, *tail;
-    friendInbox *head, *tail;
-    friendReq *head, *tail;
-    recycleBin *head, *tail;
-    userList *next, *prev;
-} *headUser, *tailUser;
+void pushFriendReq(userList *user, const char *username){ // pushTail (Queue)
+    friendReq *temp = createFiendReq(user, username);
+    if(!user->headFriendReq){
+        user->headFriendReq = user->tailFriendReq = temp;
+    } else {
+        temp->prev = user->tailFriendReq;
+        user->tailFriendReq->next = temp;
+        user->tailFriendReq = temp;
+    }
+}
 
-struct note {
-    char username[25];
-    char content[255];
-    int category;
-    int like;
-    int privateOrPublic;
-    commentNotes *head, *tail;
-    note *next, *prev;
-} *headNote, *taillNote;
+void popHeadFriendReq(userList *user){
+    if (!user->headFriendReq){
+        return ;
+    } else if(user->headFriendReq == user->tailFriendReq){
+        free(user->headFriendReq);
+        user->headFriendReq = NULL;
+    } else {
+        friendReq *candidateHead = user->headFriendReq->next;
+        candidateHead->prev = NULL;
+        user->headFriendReq->next = NULL;
+        free(user->headFriendReq);
+        user->headFriendReq = candidateHead;
+    }
+}
+
+void popTailFriendReq(userList *user){
+    if (!user->headFriendReq){
+        return ;
+    } else if(user->headFriendReq == user->tailFriendReq){
+        free(user->headFriendReq);
+        user->headFriendReq = NULL;
+    } else {
+        friendReq *candidateTail = user->tailFriendReq->prev;
+        candidateTail->next = NULL;
+        user->tailFriendReq->prev = NULL;
+        free(user->tailFriendReq);
+        user->tailFriendReq = candidateTail;
+    }
+}
+
+void popFriendReq(userList *user, const char *username){
+    if (!user->headFriendReq){
+        return;
+    } else if(username == user->headFriendReq->username){
+        popHeadFriendReq(user);
+    } else if(username == user->tailFriendReq->username){
+        popTailFriendReq(user);
+    } else {
+        friendReq *curr = user->headFriendReq;
+        while(curr && curr->username != username){
+            curr = curr->next;
+        }
+        curr->prev->next = curr->next;
+        curr->next->prev = curr->prev;
+        curr->prev = NULL;
+        curr->next = NULL;
+        free(curr);
+        curr = NULL;
+    }
+}
+
+friendInbox *createFiendInbox(userList *user, const char *username){
+    friendInbox *newNode = (friendInbox *) malloc(sizeof(friendInbox));
+    strcpy(newNode->username, username);
+    newNode->next = newNode->prev = NULL;
+
+    return newNode;
+}
+
+void pushFriendInbox(userList *user, const char *username){ // pushTail (Queue)
+    friendInbox *temp = createFiendInbox(user, username);
+    if(!user->headFriendInbox){
+        user->headFriendInbox = user->tailFriendInbox = temp;
+    } else {
+        temp->prev = user->tailFriendInbox;
+        user->tailFriendInbox->next = temp;
+        user->tailFriendInbox = temp;
+    }
+}
+
+void popHeadFriendInbox(userList *user){
+    if (!user->headFriendInbox){
+        return ;
+    } else if(user->headFriendInbox == user->tailFriendInbox){
+        free(user->headFriendInbox);
+        user->headFriendInbox = NULL;
+    } else {
+        friendInbox *candidateHead = user->headFriendInbox->next;
+        candidateHead->prev = NULL;
+        user->headFriendInbox->next = NULL;
+        free(user->headFriendInbox);
+        user->headFriendInbox = candidateHead;
+    }
+}
+
+void popTailFriendInbox(userList *user){
+    if (!user->headFriendInbox){
+        return ;
+    } else if(user->headFriendInbox == user->tailFriendInbox){
+        free(user->headFriendInbox);
+        user->headFriendInbox = NULL;
+    } else {
+        friendInbox *candidateTail = user->tailFriendInbox->prev;
+        candidateTail->next = NULL;
+        user->tailFriendInbox->prev = NULL;
+        free(user->tailFriendInbox);
+        user->tailFriendInbox = candidateTail;
+    }
+}
+
+void popFriendInbox(userList *user, const char *username){
+    if (!user->headFriendInbox){
+        return;
+    } else if(username == user->headFriendInbox->username){
+        popHeadFriendInbox(user);
+    } else if(username == user->tailFriendInbox->username){
+        popTailFriendInbox(user);
+    } else {
+        friendInbox *curr = user->headFriendInbox;
+        while(curr && curr->username != username){
+            curr = curr->next;
+        }
+        curr->prev->next = curr->next;
+        curr->next->prev = curr->prev;
+        curr->prev = NULL;
+        curr->next = NULL;
+        free(curr);
+        curr = NULL;
+    }
+}
+
+void addFriend(userList *user, const char *username){
+    userList *curr = headUser;
+    while(curr && curr->username != username){
+        curr = curr->next;
+    }
+    pushFriendInbox(user, username);
+    pushFriendReq(curr, user->username);
+}
+
+int main(){
+    return 0;
+}
