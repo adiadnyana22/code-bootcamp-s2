@@ -247,6 +247,15 @@ void addFriend(userList *user, const char *username){
     pushFriendReq(curr, user->username);
 }
 
+void cancelFriendReq(userList *user, const char *username){
+    userList *curr = headUser;
+    while(curr && strcmp(curr->username, username) != 0){
+        curr = curr->next;
+    }
+    popFriendInbox(user, username);
+    popFriendInbox(curr, user->username);
+}
+
 void acceptFriend(userList *user, const char *username){
     userList *curr = headUser;
     while(curr && strcmp(curr->username, username) != 0){
@@ -268,21 +277,239 @@ void removeFriend(userList *user, const char *username){
     popFriendList(curr, user->username);
 }
 
-int main(){
-    pushUser("adi", "adiadi");
-    pushUser("han", "hanhan");
-    pushUser("andru", "andruadnru");
+void printFriendToAdd(userList *user){
     userList *curr = headUser;
-    addFriend(curr, "han");
-    userList *testSearch = headUser;
-    while (testSearch && strcmp(testSearch->username, "han") != 0){
-        testSearch = testSearch->next;
+    int count = 1;
+    while(curr){
+        int flag = 1;
+        if(strcmp(curr->username, user->username) == 0){
+            flag = 0;
+        }
+        friendList *currList = user->headFriendList;
+        while(currList){
+            if(strcmp(currList->username, curr->username) == 0){
+                flag = 0;
+                break;
+            }
+            currList = currList->next;
+        }
+        friendReq *currReq = user->headFriendReq;
+        while(currReq){
+            if(strcmp(currReq->username, curr->username) == 0){
+                flag = 0;
+                break;
+            }
+            currReq = currReq->next;
+        }
+        friendInbox *currInbox = user->headFriendInbox;
+        while(currInbox){
+            if(strcmp(currInbox->username, curr->username) == 0){
+                flag = 0;
+                break;
+            }
+            currInbox = currInbox->next;
+        }
+        if(flag == 1){
+            printf("%d. %s\n", count++, curr->username);
+        }
+        curr = curr->next;
     }
-    acceptFriend(testSearch, "adi");
-    printf("%s\n", testSearch->headFriendList->username);
-    printf("%s\n", curr->headFriendList->username);
-    removeFriend(testSearch, "adi");
-    printf("%s\n", testSearch->headFriendList->username);
+}
+
+void printUser(){
+    int count = 1;
+    userList *curr = headUser;
+    while (curr){
+        printf("%d. %s\n", count++, curr->username);
+        curr = curr->next;
+    }
+}
+
+void printFriendList(userList *user){
+    int count = 1;
+    friendList *curr = user->headFriendList;
+    while (curr){
+        printf("%d. %s\n", count++, curr->username);
+        curr = curr->next;
+    }
+}
+
+void printFriendReq(userList *user){
+    int count = 1;
+    friendReq *curr = user->headFriendReq;
+    while (curr){
+        printf("%d. %s\n", count++, curr->username);
+        curr = curr->next;
+    }
+}
+
+void printFriendInbox(userList *user){
+    int count = 1;
+    friendInbox *curr = user->headFriendInbox;
+    while (curr){
+        printf("%d. %s\n", count++, curr->username);
+        curr = curr->next;
+    }
+}
+
+bool validateUsernameRegis(const char *username){
+    userList *curr = headUser;
+    while(curr){
+        if(strcmp(curr->username, username) == 0){
+            return false;
+        }
+        curr = curr->next;
+    }
+
+    return true;
+}
+
+userList *validateUsernameLogIn(const char *username, const char *password){
+    userList *curr = headUser;
+    while(curr){
+        if(strcmp(curr->username, username) == 0 && strcmp(curr->password, password) == 0){
+            return curr;
+        }
+        curr = curr->next;
+    }
+
+    return false;
+}
+
+int main(){
+    // pushUser("adi", "adiadi");
+    // pushUser("han", "hanhan");
+    // pushUser("andru", "andruadnru");
+    // userList *curr = headUser;
+    // printFriendToAdd(curr);
+    // addFriend(curr, "han");
+    // userList *testSearch = headUser;
+    // while (testSearch && strcmp(testSearch->username, "han") != 0){
+    //     testSearch = testSearch->next;
+    // }
+    // acceptFriend(testSearch, "adi");
+    // printFriendToAdd(curr);
+    // printf("%s\n", testSearch->headFriendList->username);
+    // printf("%s\n", curr->headFriendList->username);
+    // removeFriend(testSearch, "adi");
+    // printf("%s\n", testSearch->headFriendList->username);
+
+    int globalFlag = 1;
+    while(globalFlag == 1){
+        printf("Oo====================================oO\n");
+        printf("\t      STUDY NETWORK\n");
+        printf("Oo====================================oO\n");
+
+        printf("[All User]\nNo.\tUsername\n");
+        printUser();
+        printf("----------------------------------------\n");
+        printf("[1] Register\n[2] Login\n[3] Exit\n");
+        printf("----------------------------------------\n");
+        printf("Press 0 and enter to abort an operation\n");
+        printf("----------------------------------------\n");
+        printf(">> ");
+        int menu;
+        scanf("%d", &menu);
+        printf("----------------------------------------\n");
+        if(menu == 1){
+            char username[25], password[25];
+            printf("Please type in your username [lowercase || 1..24]: ");
+            scanf("%s", username);
+            printf("Please type in your password [lowercase || 1..24]: ");
+            scanf("%s", password);
+            if(validateUsernameRegis(username)){
+                pushUser(username, password);
+                printf("-- Registration Successfull --\n");
+            } else {
+                printf("Username already in use\n");
+            }
+        } else if(menu == 2){
+            char username[25], password[25];
+            printf("Username: ");
+            scanf("%s", username);
+            printf("Password: ");
+            scanf("%s", password);
+            userList *curr = validateUsernameLogIn(username, password);
+            if(curr){
+                printf("--Login Successfull--\n");
+                int flagLogin = 1;
+                while(flagLogin == 1){
+                    printf("Oo====================================oO\n");
+                    printf("Welcome, %s\n", curr->username);
+                    printf("Oo====================================oO\n");
+                    printf("Logged in: %s\n", curr->username);
+                    printf("----------------------------------------\n\n");
+                    printf("[All friends of %s\n", curr->username);//user
+                    printf("No.\t Username\n");
+                    printFriendList(curr);
+                    printf("----------------------------------------\n");
+                    printf("\t >>MENU<< \t\n");
+                    printf("----------------------------------------\n");
+                    printf("[1] Add Friend\n");
+                    printf("[2] Remove Friend\n");
+                    printf("[3] View Inbox\n");
+                    printf("[4] View Sent Request\n");
+                    printf("[5] Add,Edit,Announce,Delete Note\n");
+                    printf("[6] Log Out\n");
+                    printf("----------------------------------------\n");
+                    printf(">> ");
+                    int menuLogin;
+                    scanf("%d", &menuLogin);
+                    if(menuLogin == 1){
+                        printf("[ All Users You Can Add ]\n"); //input nama
+                        printf("No. \t Username\n");
+                        printFriendToAdd(curr);
+                        printf("Which user do you want to add?\n");
+                        printf(">> ");
+                        char addUsername[25];
+                        scanf("%s", addUsername);
+                        addFriend(curr, addUsername);
+                        printf("--Your request has been sent to %s --\n", addUsername);
+                    } else if(menuLogin == 2){
+                        printf("[All Friend of  %s]\n", curr->username); //nama user
+                        printf("No. \t Username\n");
+                        printFriendList(curr);
+                        printf("Which user d you want to remove?\n");
+                        printf(">> ");
+                        char removeUsername[25];
+                        scanf("%s", removeUsername);
+                        removeFriend(curr, removeUsername);
+                        printf("--You are no longer friends with %s --\n", removeUsername);
+                    } else if(menuLogin == 3){
+                        printf("[All Friend Inbox of %s]\n", curr->username); //input nama
+                        printf("No. \t Username\n");
+                        printFriendInbox(curr);
+                        printf("Which user do you want to cancel friend request?\n");
+                        printf(">> ");
+                        char cancelUsername[25];
+                        scanf("%s", cancelUsername);
+                        cancelFriendReq(curr, cancelUsername);
+                        printf("--You canceled the friend request to %s--\n", cancelUsername);
+                    } else if(menuLogin == 4){
+                        printf("[All Friend Request of %s]\n", curr->username); //input nama
+                        printf("No. \t Username\n");
+                        printFriendReq(curr);
+                        printf("Which user do you want to accepted?\n");
+                        printf(">> ");
+                        char accUsername[25];
+                        scanf("%s", accUsername);
+                        acceptFriend(curr, accUsername);
+                        printf("--You accepted the request from %s--\n", accUsername);
+                    } else if(menuLogin == 6){
+                        curr = NULL;
+                        flagLogin = 0;
+                        break;
+                    }
+                }
+            } else {
+                printf("Wrong username or password\n");
+            }
+        } else if(menu == 3){
+            printf("Thank You\n");
+            globalFlag = 0;
+            break;
+        }
+    }
     
     return 0;
 }
