@@ -3,6 +3,34 @@
 #include <string.h>
 #include "model.h"
 
+struct userList {
+    char username[25];
+    char password[25];
+    friendList *headFriendList, *tailFriendList;
+    friendInbox *headFriendInbox, *tailFriendInbox;
+    friendReq *headFriendReq, *tailFriendReq;
+    note *headNote, *tailNote;
+    recycleBin *headRecycleBin, *tailRecycleBin;
+    userList *next, *prev;
+} *headUser, *tailUser;
+
+struct privateFriend {
+    char username[25];
+    privateFriend *next, *prev;
+};
+
+struct publicDashboard {
+    char username[25];
+    char title[25];
+    char content[255];
+    char category[25];
+    int like;
+    bool privateOrPublic;
+    privateFriend *headPrivate, *tailPrivate;
+    commentNotes *headComment, *tailComment;
+    publicDashboard *next, *prev;
+} *headPd, *tailPd;
+
 userList *createUser(const char *username, const char *password){
     userList *newNode = (userList *) malloc(sizeof(userList));
     strcpy(newNode->username, username);
@@ -479,7 +507,125 @@ bool validateNoteHeader(userList *user, const char *title){
     return true;
 }
 
-publicDashboard *createNote(const char *username, const char *title, const char *content, const char *category, bool privateOrPublic, const char *prvFriend1, const char *prvFriend2, const char *prvFriend3){
+recycleBin *createRecycle(const char *title, const char *content, const char *category){
+    recycleBin *newNote = (recycleBin *) malloc(sizeof(recycleBin));
+    strcpy(newNote->title, title);
+    strcpy(newNote->content, content);
+    strcpy(newNote->category, category);
+    newNote->next = newNote->prev = NULL;
+
+    return newNote;
+}
+
+void pushRecycle(userList *user, const char *title, const char *content, const char *category){
+    recycleBin *temp = createRecycle(title, content, category);
+    if(!user->headRecycleBin){
+        user->headRecycleBin = user->tailRecycleBin = temp;
+    } else {
+        temp->prev = user->tailRecycleBin;
+        user->tailRecycleBin->next = temp;
+        user->tailRecycleBin = temp;
+    }
+}
+
+void popHeadRecycle(userList *user){
+    if (!user->headRecycleBin){
+        return ;
+    } else if(user->headRecycleBin == user->tailRecycleBin){
+        free(user->headRecycleBin);
+        user->headRecycleBin = NULL;
+    } else {
+        recycleBin *candidateHead = user->headRecycleBin->next;
+        candidateHead->prev = NULL;
+        user->headRecycleBin->next = NULL;
+        free(user->headRecycleBin);
+        user->headRecycleBin = candidateHead;
+    }
+}
+
+void popTailRecycle(userList *user){
+    if (!user->headRecycleBin){
+        return ;
+    } else if(user->headRecycleBin == user->tailRecycleBin){
+        free(user->headRecycleBin);
+        user->headRecycleBin = NULL;
+    } else {
+        recycleBin *candidateTail = user->tailRecycleBin->prev;
+        candidateTail->next = NULL;
+        user->tailRecycleBin->prev = NULL;
+        free(user->tailRecycleBin);
+        user->tailRecycleBin = candidateTail;
+    }
+}
+
+void popRecycle(userList *user, const char *title){
+    if (!user->headRecycleBin){
+        return;
+    } else if(strcmp(user->headRecycleBin->title, title) == 0){
+        popHeadRecycle(user);
+    } else if(strcmp(user->tailRecycleBin->title, title) == 0){
+        popTailRecycle(user);
+    } else {
+        recycleBin *curr = user->headRecycleBin;
+        while(curr && strcmp(curr->title, title) != 0){
+            curr = curr->next;
+        }
+        curr->prev->next = curr->next;
+        curr->next->prev = curr->prev;
+        curr->prev = NULL;
+        curr->next = NULL;
+        free(curr);
+        curr = NULL;
+    }
+}
+
+void printRecycle(userList *user){
+    int count = 1;
+    recycleBin *curr = user->headRecycleBin;
+    while(curr){
+        printf("%d. %s\n", count++, curr->title);
+        curr = curr->next;
+    }
+}
+
+void removeNote(userList *user, const char *title){
+    note *curr = user->headNote;
+    while(curr && strcmp(curr->title, title) != 0){
+        curr = curr->next;
+    }
+    pushRecycle(user, curr->title, curr->content, curr->category);
+    popNote(user, title);
+}
+
+void replaceNote(userList *user, const char *title){
+    recycleBin *curr = user->headRecycleBin;
+    while(curr && strcmp(curr->title, title) != 0){
+        curr = curr->next;
+    }
+    pushNote(user, curr->title, curr->content, curr->category);
+    popRecycle(user, title);
+}
+
+privateFriend *createPrivateFriend(const char *username){
+    privateFriend *newNode = (privateFriend *) malloc(sizeof(privateFriend));
+    strcpy(newNode->username, username);
+    newNode->next = newNode->prev = NULL;
+
+    return newNode;
+}
+
+void pushPrivateFriend(publicDashboard *publicDash, const char *username){ // pushTail (Queue)
+    privateFriend *temp = createPrivateFriend(username);
+    if(!publicDash->headPrivate){
+        publicDash->headPrivate = publicDash->tailPrivate = temp;
+    } else {
+        temp->prev = publicDash->tailPrivate;
+        publicDash->tailPrivate->next = temp;
+        publicDash->tailPrivate = temp;
+    }
+}
+
+publicDashboard *createPublicDashboard(const char *username, const char *title, const char *content, const char *category, bool privateOrPublic){
     publicDashboard *newNote = (publicDashboard *) malloc(sizeof(publicDashboard));
     strcpy(newNote->username, username);
     strcpy(newNote->title, title);
@@ -487,13 +633,59 @@ publicDashboard *createNote(const char *username, const char *title, const char 
     strcpy(newNote->category, category);
     newNote->like = 0;
     newNote->privateOrPublic = privateOrPublic;
-    strcpy(newNote->privateFriend[0], prvFriend1);
-    strcpy(newNote->privateFriend[1], prvFriend2);
-    strcpy(newNote->privateFriend[2], prvFriend3);
+    newNote->headPrivate = newNote->tailPrivate = NULL;
     newNote->headComment = newNote->tailComment = NULL;
     newNote->next = newNote->prev = NULL;
 
     return newNote;
+}
+
+void pushPublicDashboard(const char *username, const char *title, const char *content, const char *category, bool privateOrPublic){
+    publicDashboard *temp = createPublicDashboard(username, title, content, category, privateOrPublic);
+    if(!headPd){
+        headPd = tailPd = temp;
+    } else {
+        temp->prev = tailPd;
+        tailPd->next = temp;
+        tailPd = temp;
+    }
+}
+
+void announceNote(userList *user, const char *title, bool privateOrPublic){
+    note *curr = user->headNote;
+    while(curr && strcmp(curr->title, title) != 0){
+        curr = curr->next;
+    }
+    pushPublicDashboard(user->username, curr->title, curr->content, curr->category, privateOrPublic);
+    popNote(user, title);
+}
+
+void addPrivateFriend(userList *user, const char *title, const char *username){
+    publicDashboard *curr = headPd;
+    while(curr && strcmp(curr->username, user->username) == 0 && strcmp(curr->title, title)){
+        curr = curr->next;
+    }
+    pushPrivateFriend(curr, username);
+}
+
+commentNotes *createCommentNotes(const char *username, const char *comment){
+    commentNotes *newNode = (commentNotes *) malloc(sizeof(commentNotes));
+    strcpy(newNode->username, username);
+    strcpy(newNode->comment, comment);
+    newNode->next = newNode->prev = NULL;
+
+    return newNode;
+}
+
+void pushComment(publicDashboard *publicDash, const char *username, const char *comment){ // pushTail (Queue)
+    commentNotes *temp = createCommentNotes(username, comment);
+    if(!publicDash->headComment){
+        publicDash->headComment = publicDash->tailComment = temp;
+    } else {
+        temp->prev = publicDash->tailComment;
+        publicDash->tailComment->next = temp;
+        publicDash->tailComment = temp;
+    }
 }
 
 int main(){
@@ -552,8 +744,9 @@ int main(){
                     printf("[2] Remove Friend\n");
                     printf("[3] View Inbox\n");
                     printf("[4] View Sent Request\n");
-                    printf("[5] Add,Edit,Announce,Delete Note\n");
-                    printf("[6] Log Out\n");
+                    printf("[5] Add,Edit,Announce,Delete,Replace Note\n");
+                    printf("[6] View Public Dashboard\n");
+                    printf("[7] Log Out\n");
                     printf("----------------------------------------\n");
                     printf(">> ");
                     int menuLogin;
@@ -604,6 +797,7 @@ int main(){
                         printf("[2] Edit Note\n");
                         printf("[3] Announce Note\n");
                         printf("[4] Delete Note\n");
+                        printf("[5] Replace Note\n");
                         printf("----------------------------------------\n");
                         printf(">> ");
                         int menuNote;
@@ -665,7 +859,35 @@ int main(){
                             printf(">> ");
                             char annTitle[25];
                             scanf("%s", annTitle);
-
+                            printf("Do you want to make this note private (yes/no)?\n");
+                            printf(">> ");
+                            char prv[5];
+                            scanf("%s", prv);
+                            if(strcmp(prv, "yes") == 0){
+                                announceNote(curr, annTitle, true);
+                                printf("----------------------------------------\n");
+                                printf("[All Friend of  %s]\n", curr->username); //nama user
+                                printf("No. \t Username\n");
+                                printFriendList(curr);
+                                int flagAdditional = 1, i = 0;
+                                while(flagAdditional == 0 || i < 3){
+                                    printf("Who is the friend you want to exclude?\n");
+                                    printf(">> ");
+                                    char friendName[25];
+                                    scanf("%s", friendName);
+                                    addPrivateFriend(curr, annTitle, friendName);
+                                    printf("Any additional friends (yes/no)?\n");
+                                    printf(">> ");
+                                    char additionalFriend[10];
+                                    scanf("%s", additionalFriend);
+                                    if(strcmp(additionalFriend, "no")){
+                                        flagAdditional = 0;
+                                    }
+                                    i++;
+                                }
+                            } else {
+                                announceNote(curr, annTitle, false);
+                            }
                         } else if(menuNote == 4){
                             printf("[All Note of %s]\n", curr->username); //input nama
                             printf("No. \t Title\n");
@@ -674,10 +896,82 @@ int main(){
                             printf(">> ");
                             char rmvTitle[25];
                             scanf("%s", rmvTitle);
-                            popNote(curr, rmvTitle);
+                            removeNote(curr, rmvTitle);
                             printf("--Your note deleted successfully--\n");
+                        } else if(menuNote == 5){
+                            printf("[All Recycle Bin Note of %s]\n", curr->username); //input nama
+                            printf("No. \t Title\n");
+                            printRecycle(curr);
+                            printf("Which note do you want to replace?\n");
+                            printf(">> ");
+                            char rplTitle[25];
+                            scanf("%s", rplTitle);
+                            replaceNote(curr, rplTitle);
+                            printf("--Your note replaced successfully--\n");
                         }
                     } else if(menuLogin == 6){
+                        publicDashboard *currPublic = headPd;
+                        int flagDashboard = 1;
+                        while (currPublic && flagDashboard == 1){
+                            if(currPublic->next != NULL){
+                                printf("Title : %s\n", currPublic->title);
+                                printf("Author : %d\n", currPublic->username);
+                                printf("Category : %s\n", currPublic->category);
+                                printf("Content : %s\n", currPublic->content);
+                                printf("Like : %d\n", currPublic->like);
+                                printf("Comments--------------------------------\n");
+                                commentNotes *currComment = currPublic->headComment;
+                                while (currComment){
+                                    printf("%s\n%s\n---\n", currComment->username, currComment->comment);
+                                    currComment = currComment->next;
+                                }
+                                printf("What do you want to do (like/comment/next/exit)?");
+                                printf(">> ");
+                                char ans[10];
+                                scanf("%s", ans);
+                                if(strcmp(ans, "like") == 0){
+                                    currPublic->like++;
+                                } else if(strcmp(ans, "comment") == 0){
+                                    printf("Please write your comment [lowercase || 1..224]: ");
+                                    printf(">> ");
+                                    char commentTemp[255];
+                                    scanf("%s", commentTemp);
+                                    pushComment(currPublic, curr->username, commentTemp);
+                                } else if(strcmp(ans, "next") == 0){
+                                    currPublic = currPublic->next;
+                                } else if(strcmp(ans, "exit") == 0){
+                                    flagDashboard = 0;
+                                }
+                            } else if(currPublic->next == NULL){
+                                printf("Title : %s\n", currPublic->title);
+                                printf("Author : %d\n", currPublic->username);
+                                printf("Category : %s\n", currPublic->category);
+                                printf("Content : %s\n", currPublic->content);
+                                printf("Like : %d\n", currPublic->like);
+                                printf("Comments--------------------------------\n");
+                                commentNotes *currComment = currPublic->headComment;
+                                while (currComment){
+                                    printf("%s\n%s\n---\n", currComment->username, currComment->comment);
+                                    currComment = currComment->next;
+                                }
+                                printf("What do you want to do (like/comment/exit)?");
+                                printf(">> ");
+                                char ans[10];
+                                scanf("%s", ans);
+                                if(strcmp(ans, "like") == 0){
+                                    currPublic->like++;
+                                } else if(strcmp(ans, "comment") == 0){
+                                    printf("Please write your comment [lowercase || 1..224]: ");
+                                    printf(">> ");
+                                    char commentTemp[255];
+                                    scanf("%s", commentTemp);
+                                    pushComment(currPublic, curr->username, commentTemp);
+                                } else if(strcmp(ans, "exit") == 0){
+                                    flagDashboard = 0;
+                                }
+                            }
+                        }
+                    } else if(menuLogin == 7){
                         curr = NULL;
                         flagLogin = 0;
                         break;

@@ -44,6 +44,11 @@ struct userList {
     userList *next, *prev;
 } *headUser, *tailUser;
 
+struct privateFriend {
+    char username[25];
+    privateFriend *next, *prev;
+};
+
 struct publicDashboard {
     char username[25];
     char title[25];
@@ -51,7 +56,7 @@ struct publicDashboard {
     char category[25];
     int like;
     bool privateOrPublic;
-    char privateFriend[3][25];
+    privateFriend *headPrivate, *tailPrivate;
     commentNotes *headComment, *tailComment;
     publicDashboard *next, *prev;
-} *headPd, *taillPd;
+} *headPd, *tailPd;
