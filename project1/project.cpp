@@ -479,17 +479,6 @@ bool validateNoteHeader(userList *user, const char *title){
     return true;
 }
 
-void pushNote(userList *user, const char *title, const char *content, const char *category){
-    note *temp = createNote(title, content, category);
-    if(!user->headNote){
-        user->headNote = user->tailNote = temp;
-    } else {
-        temp->prev = user->tailNote;
-        user->tailNote->next = temp;
-        user->tailNote = temp;
-    }
-}
-
 publicDashboard *createNote(const char *username, const char *title, const char *content, const char *category, bool privateOrPublic, const char *prvFriend1, const char *prvFriend2, const char *prvFriend3){
     publicDashboard *newNote = (publicDashboard *) malloc(sizeof(publicDashboard));
     strcpy(newNote->username, username);
@@ -623,18 +612,19 @@ int main(){
                         if(menuNote == 1){
                             char titleNote[25], contentNote[255], categoryNote[25];
                             printf("Please type in title note [lowercase || 1..24]: ");
-                            scanf("%[^\n]", titleNote);
+                            scanf("%s", titleNote);
                             printf("Please type in content note [lowercase || 1..224]: ");
-                            scanf("%[^\n]", contentNote);
+                            scanf("%s", contentNote);
                             printf("----------------------------------------\n");
                             printf("[1] Backlog\n");
-                            printf("[2] In Progress\n");
-                            printf("[3] Peer Review\n");
-                            printf("[4] In Test\n");
+                            printf("[2] InProgress\n");
+                            printf("[3] PeerReview\n");
+                            printf("[4] InTest\n");
                             printf("[5] Done\n");
                             printf("[6] Blocked\n");
                             printf("Which category do you choose?\n");
-                            scanf("%[^\n]", titleNote);
+                            printf(">> ");
+                            scanf("%s", categoryNote);
                             if(validateNoteHeader(curr , titleNote)){
                                 pushNote(curr, titleNote, contentNote, categoryNote);
                                 printf("--Your note added successfully--\n");
@@ -648,22 +638,23 @@ int main(){
                             printf("Which note do you want to edit?\n");
                             printf(">> ");
                             char oldTitle[25];
-                            scanf("%[^\n]", oldTitle);
+                            scanf("%s", oldTitle);
                             printf("----------------------------------------\n");
                             char titleNote[25], contentNote[255], categoryNote[25];
                             printf("Please type in new title note [lowercase || 1..24]: ");
-                            scanf("%[^\n]", titleNote);
+                            scanf("%s", titleNote);
                             printf("Please type in new content note [lowercase || 1..224]: ");
-                            scanf("%[^\n]", contentNote);
+                            scanf("%s", contentNote);
                             printf("----------------------------------------\n");
                             printf("[1] Backlog\n");
-                            printf("[2] In Progress\n");
-                            printf("[3] Peer Review\n");
-                            printf("[4] In Test\n");
+                            printf("[2] InProgress\n");
+                            printf("[3] PeerReview\n");
+                            printf("[4] InTest\n");
                             printf("[5] Done\n");
                             printf("[6] Blocked\n");
                             printf("Which category do you choose?\n");
-                            scanf("%[^\n]", titleNote);
+                            printf(">> ");
+                            scanf("%s", categoryNote);
                             editNote(curr, oldTitle, titleNote, contentNote, categoryNote);
                             printf("--Your note edited successfully--\n");
                         } else if(menuNote == 3){
@@ -673,7 +664,7 @@ int main(){
                             printf("Which note do you want to announce?\n");
                             printf(">> ");
                             char annTitle[25];
-                            scanf("%[^\n]", annTitle);
+                            scanf("%s", annTitle);
 
                         } else if(menuNote == 4){
                             printf("[All Note of %s]\n", curr->username); //input nama
@@ -682,7 +673,7 @@ int main(){
                             printf("Which note do you want to delete?\n");
                             printf(">> ");
                             char rmvTitle[25];
-                            scanf("%[^\n]", rmvTitle);
+                            scanf("%s", rmvTitle);
                             popNote(curr, rmvTitle);
                             printf("--Your note deleted successfully--\n");
                         }
