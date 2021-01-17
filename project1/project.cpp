@@ -376,24 +376,138 @@ userList *validateUsernameLogIn(const char *username, const char *password){
     return false;
 }
 
-int main(){
-    // pushUser("adi", "adiadi");
-    // pushUser("han", "hanhan");
-    // pushUser("andru", "andruadnru");
-    // userList *curr = headUser;
-    // printFriendToAdd(curr);
-    // addFriend(curr, "han");
-    // userList *testSearch = headUser;
-    // while (testSearch && strcmp(testSearch->username, "han") != 0){
-    //     testSearch = testSearch->next;
-    // }
-    // acceptFriend(testSearch, "adi");
-    // printFriendToAdd(curr);
-    // printf("%s\n", testSearch->headFriendList->username);
-    // printf("%s\n", curr->headFriendList->username);
-    // removeFriend(testSearch, "adi");
-    // printf("%s\n", testSearch->headFriendList->username);
+note *createNote(const char *title, const char *content, const char *category){
+    note *newNote = (note *) malloc(sizeof(note));
+    strcpy(newNote->title, title);
+    strcpy(newNote->content, content);
+    strcpy(newNote->category, category);
+    newNote->next = newNote->prev = NULL;
 
+    return newNote;
+}
+
+void pushNote(userList *user, const char *title, const char *content, const char *category){
+    note *temp = createNote(title, content, category);
+    if(!user->headNote){
+        user->headNote = user->tailNote = temp;
+    } else {
+        temp->prev = user->tailNote;
+        user->tailNote->next = temp;
+        user->tailNote = temp;
+    }
+}
+
+void popHeadNote(userList *user){
+    if (!user->headNote){
+        return ;
+    } else if(user->headNote == user->tailNote){
+        free(user->headNote);
+        user->headNote = NULL;
+    } else {
+        note *candidateHead = user->headNote->next;
+        candidateHead->prev = NULL;
+        user->headNote->next = NULL;
+        free(user->headNote);
+        user->headNote = candidateHead;
+    }
+}
+
+void popTailNote(userList *user){
+    if (!user->headNote){
+        return ;
+    } else if(user->headNote == user->tailNote){
+        free(user->headNote);
+        user->headNote = NULL;
+    } else {
+        note *candidateTail = user->tailNote->prev;
+        candidateTail->next = NULL;
+        user->tailNote->prev = NULL;
+        free(user->tailNote);
+        user->tailNote = candidateTail;
+    }
+}
+
+void popNote(userList *user, const char *title){
+    if (!user->headNote){
+        return;
+    } else if(strcmp(user->headNote->title, title) == 0){
+        popHeadNote(user);
+    } else if(strcmp(user->tailNote->title, title) == 0){
+        popTailNote(user);
+    } else {
+        note *curr = user->headNote;
+        while(curr && strcmp(curr->title, title) != 0){
+            curr = curr->next;
+        }
+        curr->prev->next = curr->next;
+        curr->next->prev = curr->prev;
+        curr->prev = NULL;
+        curr->next = NULL;
+        free(curr);
+        curr = NULL;
+    }
+}
+
+void editNote(userList *user, const char *title, const char *newTitle, const char *newContent, const char *newCategory){
+    note *curr = user->headNote;
+    while(curr && strcmp(curr->title, title) != 0){
+        curr = curr->next;
+    }
+    strcpy(curr->title, newTitle);
+    strcpy(curr->content, newContent);
+    strcpy(curr->category, newCategory);
+}
+
+void printNote(userList *user){
+    int count = 1;
+    note *curr = user->headNote;
+    while(curr){
+        printf("%d. %s\n", count++, curr->title);
+        curr = curr->next;
+    }
+}
+
+bool validateNoteHeader(userList *user, const char *title){
+    note *curr = user->headNote;
+    while(curr){
+        if(strcmp(curr->title, title) == 0){
+            return false;
+        }
+        curr = curr->next;
+    }
+
+    return true;
+}
+
+void pushNote(userList *user, const char *title, const char *content, const char *category){
+    note *temp = createNote(title, content, category);
+    if(!user->headNote){
+        user->headNote = user->tailNote = temp;
+    } else {
+        temp->prev = user->tailNote;
+        user->tailNote->next = temp;
+        user->tailNote = temp;
+    }
+}
+
+publicDashboard *createNote(const char *username, const char *title, const char *content, const char *category, bool privateOrPublic, const char *prvFriend1, const char *prvFriend2, const char *prvFriend3){
+    publicDashboard *newNote = (publicDashboard *) malloc(sizeof(publicDashboard));
+    strcpy(newNote->username, username);
+    strcpy(newNote->title, title);
+    strcpy(newNote->content, content);
+    strcpy(newNote->category, category);
+    newNote->like = 0;
+    newNote->privateOrPublic = privateOrPublic;
+    strcpy(newNote->privateFriend[0], prvFriend1);
+    strcpy(newNote->privateFriend[1], prvFriend2);
+    strcpy(newNote->privateFriend[2], prvFriend3);
+    newNote->headComment = newNote->tailComment = NULL;
+    newNote->next = newNote->prev = NULL;
+
+    return newNote;
+}
+
+int main(){
     int globalFlag = 1;
     while(globalFlag == 1){
         printf("Oo====================================oO\n");
@@ -455,6 +569,7 @@ int main(){
                     printf(">> ");
                     int menuLogin;
                     scanf("%d", &menuLogin);
+                    printf("----------------------------------------\n");
                     if(menuLogin == 1){
                         printf("[ All Users You Can Add ]\n"); //input nama
                         printf("No. \t Username\n");
@@ -495,6 +610,82 @@ int main(){
                         scanf("%s", accUsername);
                         acceptFriend(curr, accUsername);
                         printf("--You accepted the request from %s--\n", accUsername);
+                    } else if(menuLogin == 5){
+                        printf("[1] Add Note\n");
+                        printf("[2] Edit Note\n");
+                        printf("[3] Announce Note\n");
+                        printf("[4] Delete Note\n");
+                        printf("----------------------------------------\n");
+                        printf(">> ");
+                        int menuNote;
+                        scanf("%d", &menuNote);
+                        printf("----------------------------------------\n");
+                        if(menuNote == 1){
+                            char titleNote[25], contentNote[255], categoryNote[25];
+                            printf("Please type in title note [lowercase || 1..24]: ");
+                            scanf("%[^\n]", titleNote);
+                            printf("Please type in content note [lowercase || 1..224]: ");
+                            scanf("%[^\n]", contentNote);
+                            printf("----------------------------------------\n");
+                            printf("[1] Backlog\n");
+                            printf("[2] In Progress\n");
+                            printf("[3] Peer Review\n");
+                            printf("[4] In Test\n");
+                            printf("[5] Done\n");
+                            printf("[6] Blocked\n");
+                            printf("Which category do you choose?\n");
+                            scanf("%[^\n]", titleNote);
+                            if(validateNoteHeader(curr , titleNote)){
+                                pushNote(curr, titleNote, contentNote, categoryNote);
+                                printf("--Your note added successfully--\n");
+                            } else {
+                                printf("Note title is already in use\n");
+                            }
+                        } else if(menuNote == 2){
+                            printf("[All Note of %s]\n", curr->username); //input nama
+                            printf("No. \t Title\n");
+                            printNote(curr);
+                            printf("Which note do you want to edit?\n");
+                            printf(">> ");
+                            char oldTitle[25];
+                            scanf("%[^\n]", oldTitle);
+                            printf("----------------------------------------\n");
+                            char titleNote[25], contentNote[255], categoryNote[25];
+                            printf("Please type in new title note [lowercase || 1..24]: ");
+                            scanf("%[^\n]", titleNote);
+                            printf("Please type in new content note [lowercase || 1..224]: ");
+                            scanf("%[^\n]", contentNote);
+                            printf("----------------------------------------\n");
+                            printf("[1] Backlog\n");
+                            printf("[2] In Progress\n");
+                            printf("[3] Peer Review\n");
+                            printf("[4] In Test\n");
+                            printf("[5] Done\n");
+                            printf("[6] Blocked\n");
+                            printf("Which category do you choose?\n");
+                            scanf("%[^\n]", titleNote);
+                            editNote(curr, oldTitle, titleNote, contentNote, categoryNote);
+                            printf("--Your note edited successfully--\n");
+                        } else if(menuNote == 3){
+                            printf("[All Note of %s]\n", curr->username); //input nama
+                            printf("No. \t Title\n");
+                            printNote(curr);
+                            printf("Which note do you want to announce?\n");
+                            printf(">> ");
+                            char annTitle[25];
+                            scanf("%[^\n]", annTitle);
+
+                        } else if(menuNote == 4){
+                            printf("[All Note of %s]\n", curr->username); //input nama
+                            printf("No. \t Title\n");
+                            printNote(curr);
+                            printf("Which note do you want to delete?\n");
+                            printf(">> ");
+                            char rmvTitle[25];
+                            scanf("%[^\n]", rmvTitle);
+                            popNote(curr, rmvTitle);
+                            printf("--Your note deleted successfully--\n");
+                        }
                     } else if(menuLogin == 6){
                         curr = NULL;
                         flagLogin = 0;

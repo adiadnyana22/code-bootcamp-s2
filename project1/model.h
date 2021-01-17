@@ -20,11 +20,17 @@ struct commentNotes {
 };
 
 struct recycleBin {
+    char title[25];
     char content[255];
-    int category;
-    int like;
-    int privateOrPublic;
+    char category[25];
     recycleBin *next, *prev;
+};
+
+struct note {
+    char title[25];
+    char content[255];
+    char category[25];
+    note *next, *prev;
 };
 
 struct userList {
@@ -33,16 +39,19 @@ struct userList {
     friendList *headFriendList, *tailFriendList;
     friendInbox *headFriendInbox, *tailFriendInbox;
     friendReq *headFriendReq, *tailFriendReq;
+    note *headNote, *tailNote;
     recycleBin *headRecycleBin, *tailRecycleBin;
     userList *next, *prev;
 } *headUser, *tailUser;
 
-struct note {
+struct publicDashboard {
     char username[25];
+    char title[25];
     char content[255];
-    int category;
+    char category[25];
     int like;
-    int privateOrPublic;
-    commentNotes *head, *tail;
-    note *next, *prev;
-} *headNote, *taillNote;
+    bool privateOrPublic;
+    char privateFriend[3][25];
+    commentNotes *headComment, *tailComment;
+    publicDashboard *next, *prev;
+} *headPd, *taillPd;
