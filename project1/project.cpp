@@ -3,34 +3,6 @@
 #include <string.h>
 #include "model.h"
 
-struct userList {
-    char username[25];
-    char password[25];
-    friendList *headFriendList, *tailFriendList;
-    friendInbox *headFriendInbox, *tailFriendInbox;
-    friendReq *headFriendReq, *tailFriendReq;
-    note *headNote, *tailNote;
-    recycleBin *headRecycleBin, *tailRecycleBin;
-    userList *next, *prev;
-} *headUser, *tailUser;
-
-struct privateFriend {
-    char username[25];
-    privateFriend *next, *prev;
-};
-
-struct publicDashboard {
-    char username[25];
-    char title[25];
-    char content[255];
-    char category[25];
-    int like;
-    bool privateOrPublic;
-    privateFriend *headPrivate, *tailPrivate;
-    commentNotes *headComment, *tailComment;
-    publicDashboard *next, *prev;
-} *headPd, *tailPd;
-
 userList *createUser(const char *username, const char *password){
     userList *newNode = (userList *) malloc(sizeof(userList));
     strcpy(newNode->username, username);
@@ -688,6 +660,18 @@ void pushComment(publicDashboard *publicDash, const char *username, const char *
     }
 }
 
+bool validatePrivate(userList *user, publicDashboard *dashboard){
+    privateFriend *curr = dashboard->headPrivate;
+    while(curr){
+        if(strcmp(curr->username, user->username) == 0 || strcmp(dashboard->username, user->username) == 0){
+            return true;
+        }
+        curr = curr->next;
+    }
+
+    return false;
+}
+
 int main(){
     int globalFlag = 1;
     while(globalFlag == 1){
@@ -870,7 +854,7 @@ int main(){
                                 printf("No. \t Username\n");
                                 printFriendList(curr);
                                 int flagAdditional = 1, i = 0;
-                                while(flagAdditional == 0 || i < 3){
+                                while(flagAdditional == 1 && i < 3){
                                     printf("Who is the friend you want to exclude?\n");
                                     printf(">> ");
                                     char friendName[25];
@@ -880,8 +864,9 @@ int main(){
                                     printf(">> ");
                                     char additionalFriend[10];
                                     scanf("%s", additionalFriend);
-                                    if(strcmp(additionalFriend, "no")){
+                                    if(strcmp(additionalFriend, "no") == 0){
                                         flagAdditional = 0;
+                                        break;
                                     }
                                     i++;
                                 }
@@ -913,61 +898,65 @@ int main(){
                         publicDashboard *currPublic = headPd;
                         int flagDashboard = 1;
                         while (currPublic && flagDashboard == 1){
-                            if(currPublic->next != NULL){
-                                printf("Title : %s\n", currPublic->title);
-                                printf("Author : %d\n", currPublic->username);
-                                printf("Category : %s\n", currPublic->category);
-                                printf("Content : %s\n", currPublic->content);
-                                printf("Like : %d\n", currPublic->like);
-                                printf("Comments--------------------------------\n");
-                                commentNotes *currComment = currPublic->headComment;
-                                while (currComment){
-                                    printf("%s\n%s\n---\n", currComment->username, currComment->comment);
-                                    currComment = currComment->next;
-                                }
-                                printf("What do you want to do (like/comment/next/exit)?");
-                                printf(">> ");
-                                char ans[10];
-                                scanf("%s", ans);
-                                if(strcmp(ans, "like") == 0){
-                                    currPublic->like++;
-                                } else if(strcmp(ans, "comment") == 0){
-                                    printf("Please write your comment [lowercase || 1..224]: ");
+                            if(!validatePrivate(curr, currPublic)){
+                                currPublic = currPublic->next;
+                            } else {
+                                if(currPublic->next != NULL){
+                                    printf("Title : %s\n", currPublic->title);
+                                    printf("Author : %s\n", currPublic->username);
+                                    printf("Category : %s\n", currPublic->category);
+                                    printf("Content : %s\n", currPublic->content);
+                                    printf("Like : %d\n", currPublic->like);
+                                    printf("Comments--------------------------------\n");
+                                    commentNotes *currComment = currPublic->headComment;
+                                    while (currComment){
+                                        printf("%s\n%s\n---\n", currComment->username, currComment->comment);
+                                        currComment = currComment->next;
+                                    }
+                                    printf("What do you want to do (like/comment/next/exit)?");
                                     printf(">> ");
-                                    char commentTemp[255];
-                                    scanf("%s", commentTemp);
-                                    pushComment(currPublic, curr->username, commentTemp);
-                                } else if(strcmp(ans, "next") == 0){
-                                    currPublic = currPublic->next;
-                                } else if(strcmp(ans, "exit") == 0){
-                                    flagDashboard = 0;
-                                }
-                            } else if(currPublic->next == NULL){
-                                printf("Title : %s\n", currPublic->title);
-                                printf("Author : %d\n", currPublic->username);
-                                printf("Category : %s\n", currPublic->category);
-                                printf("Content : %s\n", currPublic->content);
-                                printf("Like : %d\n", currPublic->like);
-                                printf("Comments--------------------------------\n");
-                                commentNotes *currComment = currPublic->headComment;
-                                while (currComment){
-                                    printf("%s\n%s\n---\n", currComment->username, currComment->comment);
-                                    currComment = currComment->next;
-                                }
-                                printf("What do you want to do (like/comment/exit)?");
-                                printf(">> ");
-                                char ans[10];
-                                scanf("%s", ans);
-                                if(strcmp(ans, "like") == 0){
-                                    currPublic->like++;
-                                } else if(strcmp(ans, "comment") == 0){
-                                    printf("Please write your comment [lowercase || 1..224]: ");
+                                    char ans[10];
+                                    scanf("%s", ans);
+                                    if(strcmp(ans, "like") == 0){
+                                        currPublic->like++;
+                                    } else if(strcmp(ans, "comment") == 0){
+                                        printf("Please write your comment [lowercase || 1..224]: ");
+                                        printf(">> ");
+                                        char commentTemp[255];
+                                        scanf("%s", commentTemp);
+                                        pushComment(currPublic, curr->username, commentTemp);
+                                    } else if(strcmp(ans, "next") == 0){
+                                        currPublic = currPublic->next;
+                                    } else if(strcmp(ans, "exit") == 0){
+                                        flagDashboard = 0;
+                                    }
+                                } else if(currPublic->next == NULL){
+                                    printf("Title : %s\n", currPublic->title);
+                                    printf("Author : %s\n", currPublic->username);
+                                    printf("Category : %s\n", currPublic->category);
+                                    printf("Content : %s\n", currPublic->content);
+                                    printf("Like : %d\n", currPublic->like);
+                                    printf("Comments--------------------------------\n");
+                                    commentNotes *currComment = currPublic->headComment;
+                                    while (currComment){
+                                        printf("%s\n%s\n---\n", currComment->username, currComment->comment);
+                                        currComment = currComment->next;
+                                    }
+                                    printf("What do you want to do (like/comment/exit)?\n");
                                     printf(">> ");
-                                    char commentTemp[255];
-                                    scanf("%s", commentTemp);
-                                    pushComment(currPublic, curr->username, commentTemp);
-                                } else if(strcmp(ans, "exit") == 0){
-                                    flagDashboard = 0;
+                                    char ans[10];
+                                    scanf("%s", ans);
+                                    if(strcmp(ans, "like") == 0){
+                                        currPublic->like++;
+                                    } else if(strcmp(ans, "comment") == 0){
+                                        printf("Please write your comment [lowercase || 1..224]: ");
+                                        printf(">> ");
+                                        char commentTemp[255];
+                                        scanf("%s", commentTemp);
+                                        pushComment(currPublic, curr->username, commentTemp);
+                                    } else if(strcmp(ans, "exit") == 0){
+                                        flagDashboard = 0;
+                                    }
                                 }
                             }
                         }
