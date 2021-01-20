@@ -63,7 +63,7 @@ Node *deleteNode(Node *root, int key){
 
         Node *candidateRoot = inOrderPredecessor(root);
         root->key = candidateRoot->key;
-        root->left = deleteNode(root->left, key);
+        root->left = deleteNode(root->left, candidateRoot->key);
     }
 
     return root;
